@@ -22,6 +22,16 @@ async function fetchFeedPosts() {
     renderCards(allPosts); // Cards screen par dikhaye
 }
 
+// Chhota helper: user-submitted text ko HTML-safe banata hai
+function escapeHtml(value = '') {
+    return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+}
+
 // Function to Render Cards on Screen
 function renderCards(postsToRender) {
     feedContainer.innerHTML = '';
@@ -31,31 +41,37 @@ function renderCards(postsToRender) {
         return;
     }
 
-    feedContainer.innerHTML = postsToRender.map(post => {
-        const itemImg = post['image-url'] || 'https://placehold.co/600x400/1e293b/f8fafc?text=No+Image';
-        const isLost = post.status && post.status.toLowerCase() === 'lost';
-        const badgeClass = isLost ? 'bg-danger' : 'bg-success';
+   feedContainer.innerHTML = postsToRender.map(post => {
+    const itemImg = post['image-url'] || 'https://placehold.co/600x400/1e293b/f8fafc?text=No+Image';
+    const isLost = post.status && post.status.toLowerCase() === 'lost';
+    const badgeClass = isLost ? 'bg-danger' : 'bg-success';
 
-        return `
-            <div class="col">
-                <div class="card h-100 text-white" style="background-color: #1e293b; border: 1px solid #334155; border-radius: 16px; overflow: hidden;">
-                    <div style="height: 220px; overflow: hidden; background-color: #0f172a;">
-                        <img src="${itemImg}" class="w-100 h-100 card-img-top" alt="${post.item_name || 'Item'}" style="object-fit: cover;">
+    // Escape everything that came from the database
+    const safeImg    = escapeHtml(itemImg);
+    const safeStatus = escapeHtml(post.status || 'Unknown');
+    const safeName   = escapeHtml(post.item_name || 'Untitled Item');
+    const safeDesc   = escapeHtml(post.description || 'No description provided.');
+
+    return `
+        <div class="col">
+            <div class="card h-100 text-white" style="background-color: #1e293b; border: 1px solid #334155; border-radius: 16px; overflow: hidden;">
+                <div style="height: 220px; overflow: hidden; background-color: #0f172a;">
+                    <img src="${safeImg}" class="w-100 h-100 card-img-top" alt="${safeName}" style="object-fit: cover;">
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="badge ${badgeClass} px-3 py-2" style="border-radius: 20px; font-weight: 600;">${safeStatus}</span>
+                        <small class="text-muted">
+                            <i class="fa-regular fa-user me-1"></i> User Connected
+                        </small>
                     </div>
-                    <div class="card-body d-flex flex-column">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="badge ${badgeClass} px-3 py-2" style="border-radius: 20px; font-weight: 600;">${post.status}</span>
-                            <small class="text-muted">
-                                <i class="fa-regular fa-user me-1"></i> User Connected
-                            </small>
-                        </div>
-                        <h5 class="card-title text-info fw-bold mb-2">${post.item_name || 'Untitled Item'}</h5>
-                        <p class="card-text text-secondary small flex-grow-1">${post.description || 'No description provided.'}</p>
-                    </div>
+                    <h5 class="card-title text-info fw-bold mb-2">${safeName}</h5>
+                    <p class="card-text text-secondary small flex-grow-1">${safeDesc}</p>
                 </div>
             </div>
-        `;
-    }).join('');
+        </div>
+    `;
+}).join('');
 }
 
 // Filter Event Listeners Setup
